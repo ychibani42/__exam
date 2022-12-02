@@ -105,21 +105,21 @@ int	__microshell(char **av, char **envp)
 	{
 		av = &av[i + 1];
 		i = 0;
-		while (av[i] && __is_delim(av[i]) || __is_pipe(av[i]))
+		while (av[i] && !__is_delim(av[i]) && !__is_pipe(av[i]))
 			i++;
 		if (__is_builtin(av[0]))
 		{
-			if (!__cd(av[1], i))
+			if (__cd(av[1], i) == __FAILURE)
 				return (__FAILURE);
 		}
 		else if (i != 0 && (!av[i] || __is_delim(av[i])))
 		{
-			if (!simple_fork(av, i, envp, &prev_fd))
+			if (simple_fork(av, i, envp, &prev_fd) == __FAILURE)
 				return (__FAILURE);
 		}
 		else if (i != 0 && __is_pipe(av[i]))
 		{
-			if (!complexe_fork(av, i, envp, &prev_fd))
+			if (complexe_fork(av, i, envp, &prev_fd) == __FAILURE)
 				return (__FAILURE);
 		}
 	}
