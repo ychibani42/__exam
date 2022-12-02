@@ -5,12 +5,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-void	execute(int temp_fd, char **envp, char **cmd, int i)
-{
-	cmd[i] = NULL;
-	dup2(temp_fd, STDIN_FILENO);
-	execve(cmd[0], cmd, envp);
-}
 int	ft_putstr_fd2(char *str, char *arg)
 {
 	while (*str)
@@ -51,7 +45,6 @@ int	main(int argc, char *argv[], char *env[])
 			i++;
 		if (strcmp(argv[0], "cd") == 0) //cd
 		{
-			fprintf(stderr, "builtin\n");
 			if (i != 2)
 				ft_putstr_fd2("error: cd: bad arguments", NULL);
 			else if (chdir(argv[1]) != 0)
@@ -59,7 +52,6 @@ int	main(int argc, char *argv[], char *env[])
 		}
 		else if (i != 0 && (argv[i] == NULL || strcmp(argv[i], ";") == 0)) //exec in stdout
 		{
-			fprintf(stderr, "pas un pipe ni un ;\n");
 			if ( fork() == 0)
 			{
 				if (ft_execute(argv, i, tmp_fd, env))
@@ -75,7 +67,6 @@ int	main(int argc, char *argv[], char *env[])
 		}
 		else if(i != 0 && strcmp(argv[i], "|") == 0) //pipe
 		{
-			fprintf(stderr, "pipe\n");
 			pipe(fd);
 			if ( fork() == 0)
 			{
