@@ -1,0 +1,31 @@
+Il s'agit d'un programme C qui implémente un simple serveur de chat.
+
+Il utilise des sockets et l'appel système select pour gérer les connexions de plusieurs clients.
+
+Le programme commence par inclure plusieurs bibliothèques C qui fournissent des fonctions pour la programmation des sockets, la gestion des chaînes de caractères et les appels système.
+
+Ensuite, une structure t_client est définie, qui contient un descripteur de fichier fd, un ID id et un pointeur sur le client suivant. Un pointeur global g_clients est initialisé à NULL.
+
+Plusieurs variables globales sont ensuite déclarées, notamment sock_fd pour le descripteur de fichier de la socket du serveur, g_id pour les identifiants des clients et plusieurs tableaux de caractères pour les messages et les tampons.
+
+La fonction fatal est définie ; elle est appelée pour afficher un message "Fatal error" et mettre fin au programme avec un code de sortie de 1.
+
+Deux fonctions d'utils sont ensuite définies, get_id et get_max_fd, qui sont utilisées pour récupérer l'identifiant d'un client à partir de son descripteur de fichier et pour obtenir le descripteur de fichier maximal dans le contexte actuel, respectivement.
+
+La fonction send_all envoie un message à tous les clients connectés, à l'exception de l'expéditeur, en fonction de son descripteur de fichier.
+
+La fonction add_client_to_list ajoute un nouveau client à la liste chaînée g_clients, lui attribue un nouvel identifiant et renvoie cet identifiant.
+
+La fonction add_client est appelée lorsqu'un nouveau client se connecte au serveur. Elle accepte la connexion du client, l'ajoute à la liste et envoie un message à tous les clients indiquant qu'un nouveau client s'est connecté.
+
+La fonction rm_client supprime un client de la liste chaînée à partir de son descripteur de fichier, libère la mémoire et renvoie son ID.
+
+La fonction ex_msg est appelée lorsqu'un client envoie un message. Elle extrait le message et le formate, puis l'envoie à tous les autres clients à l'aide de la fonction send_all.
+
+C'est dans la fonction main que le programme commence à s'exécuter. Elle vérifie d'abord si le nombre correct d'arguments (le numéro de port) a été fourni. Elle initialise ensuite le socket du serveur, le lie au port spécifié et écoute les connexions entrantes.
+
+Le programme entre ensuite dans une boucle infinie, qui utilise l'appel système select pour vérifier si des données arrivent des clients. S'il y a des données entrantes, il détermine de quel descripteur de fichier elles proviennent et appelle la fonction appropriée (add_client pour un nouveau client, ex_msg pour un message, rm_client pour le départ d'un client).
+
+S'il n'y a pas de données entrantes, la boucle continue d'attendre les données.
+
+Traduit avec www.DeepL.com/Translator (version gratuite)
