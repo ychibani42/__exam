@@ -1,85 +1,65 @@
-#include <errno.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <netdb.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <netinet/in.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
-int extract_message(char **buf, char **msg)
+int id = 0; int max; 
+fd_set curr_fd, write_fd, read_fd;
+
+typedef struct s_client
 {
-	char	*newbuf;
-	int	i;
+	int fd;
+	int id;
 
-	*msg = 0;
-	if (*buf == 0)
-		return (0);
-	i = 0;
-	while ((*buf)[i])
-	{
-		if ((*buf)[i] == '\n')
-		{
-			newbuf = calloc(1, sizeof(*newbuf) * (strlen(*buf + i + 1) + 1));
-			if (newbuf == 0)
-				return (-1);
-			strcpy(newbuf, *buf + i + 1);
-			*msg = *buf;
-			(*msg)[i + 1] = 0;
-			*buf = newbuf;
-			return (1);
-		}
+} t_client;
+
+t_client clients[1024];
+char buffer[1000000], msg[1000000];
+int sockfd;
+
+
+
+
+void add_client(void)
+{
+	int i = 0;
+	struct sockaddr_in cli; 
+
+	while (clients[i].fd > 0 && i < 1024)
 		i++;
-	}
-	return (0);
+	unsigned int len = sizeof(cli);
+	clients[i].fd = accept(sockfd, (struct sockaddr *)&cli, &len);
+	if (clients[i].fd < 0)
+		fatal ();
+	clients[i].id = id++;
+	if (clients[i].fd > max)
+		max = clients[i].fd;
+	FD_SET(clients[i].fd, &curr_fd);
 }
 
-char *str_join(char *buf, char *add)
-{
-	char	*newbuf;
-	int		len;
-
-	if (buf == 0)
-		len = 0;
-	else
-		len = strlen(buf);
-	newbuf = malloc(sizeof(*newbuf) * (len + strlen(add) + 1));
-	if (newbuf == 0)
-		return (0);
-	newbuf[0] = 0;
-	if (buf != 0)
-		strcat(newbuf, buf);
-	free(buf);
-	strcat(newbuf, add);
-	return (newbuf);
-}
-
-void	fatal(void)
-{
-	char *str = "Fatal Error\n";
-	write(STDERR_FILENO, str, strlen(str));
-	exit (1);
-}
 
 int main(int ac, char **av)
 {
 	if (ac != 2)
 	{
-		write (2, "Wrong number of arguments\n", strlen("Wrong number of arguments\n"));
+		write(2, "Wrong number of arguments\n", strlen("Wrong number of arguments\n"));
 		exit(1);
 	}
-	int sockfd, connfd, len;
-	struct sockaddr_in servaddr;
+	int  connfd, len;
+	struct sockaddr_in servaddr, cli; 
 
 	// socket create and verification 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0); 
 	if (sockfd == -1) { 
-		fatal();
-		exit(1); 
+		printf("socket creation failed...\n"); 
+		exit(0); 
 	} 
+	else
+		printf("Socket successfully created..\n"); 
 	bzero(&servaddr, sizeof(servaddr)); 
 
 	// assign IP, PORT 
@@ -98,15 +78,54 @@ int main(int ac, char **av)
 		printf("cannot listen\n"); 
 		exit(0); 
 	}
-	len = sizeof(cli);
-	connfd = accept(sockfd, (struct sockaddr *)&cli, &len);
 
-	char buffer[12] = inet_ntop(AF_INET, &servaddr, buffer, 1241);
-	printf("connection : %s\n", buffer);
+	FD_ZERO(&curr_fd);
+	FD_SET(sockfd, &curr_fd);
+	max = sockfd;
+
+	while (1)
+	{
+		write_fd = read_fd = curr_fd;	
+		if (select(max + 1, &read_fd, &write_fd, NULL, NULL) < 0)
+			fatal();
+		if (FD_ISSET(sockfd, &read_fd))
+		{
+			add_client();
+		}
+		for (int i = 0; i < 1024; i++)
+		{
+			if (FD_ISSET(clients[i].fd, &read_fd));
+			{
+				int ret = 1;
+
+				while (ret)
+				{
+					ret = recv(clients[i].fd, buffer + strlen(buffer), 1, 0);
+					if (buffer[strlen(buffer) - 1] == '\n')
+						break ; 
+				}
+				if (ret == 0)
+				{
+					// print(il s;est deco)
+					FD_CLR(clients[i].fd, &curr_fd);
+					close(clients[i].fd);
+					clients[i].id = -1;
+					clients[i].fd = -1;
+				}
+				else
+				{
+					broadcast();
+				}
+			}
+		}
+
+
+		/* code */
+	}	
 	if (connfd < 0) { 
         printf("server acccept failed...\n"); 
         exit(0); 
     } 
     else
-        printf("server acccept the client...\n");
+        printf("server acccept the client...\n")
 }
